@@ -103,6 +103,27 @@ const migrateExistingToDefault = () => {
   if (!fs.existsSync(defaultDir)) {
     fs.mkdirSync(defaultDir, { recursive: true });
   }
+
+  // Restore from environment variables if defined on Render
+  if (process.env.REACH_TOKENS) {
+    try {
+      fs.writeFileSync(path.join(defaultDir, 'tokens.json'), process.env.REACH_TOKENS);
+      console.log('Restored tokens from REACH_TOKENS environment variable');
+    } catch(e) {}
+  }
+  if (process.env.REACH_TEMPLATES) {
+    try {
+      fs.writeFileSync(path.join(defaultDir, 'templates.json'), process.env.REACH_TEMPLATES);
+      console.log('Restored templates from REACH_TEMPLATES environment variable');
+    } catch(e) {}
+  }
+  if (process.env.REACH_CONFIG) {
+    try {
+      fs.writeFileSync(path.join(defaultDir, 'config.json'), process.env.REACH_CONFIG);
+      console.log('Restored config from REACH_CONFIG environment variable');
+    } catch(e) {}
+  }
+
   const files = ['config.json', 'tokens.json', 'templates.json', 'discovered_posts.json'];
   const possibleSrcDirs = [
     path.join(__dirname, 'data', 'profiles', 'default'),
