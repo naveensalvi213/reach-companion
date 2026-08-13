@@ -400,22 +400,34 @@ const scrapeTwitterCli = async (keywords, hours, tokenValue, ct0Value, excludeKe
 
     try {
       let stdout = '';
-      let { stdout: out1, error: err1 } = await runCli(TWITTER_PATH, args, envs);
+      let { stdout: out1, error: err1, stderr: std1 } = await runCli(TWITTER_PATH, args, envs);
       stdout = out1;
+      if (err1) {
+        console.log(`[Twitter CLI debug] Path run check failed: ${err1.message}. Stderr: ${std1}`);
+      }
 
       // Fallback 1: Run via python3 module
       if (!stdout || err1) {
-        let { stdout: out2 } = await runCli('python3', ['-m', 'twitter_cli.cli', ...args], envs);
+        let { stdout: out2, error: err2, stderr: std2 } = await runCli('python3', ['-m', 'twitter_cli.cli', ...args], envs);
         stdout = out2;
+        if (err2) {
+          console.log(`[Twitter CLI debug] Fallback 1 module check failed: ${err2.message}. Stderr: ${std2}`);
+        }
       }
       // Fallback 2: Check ~/.local/bin/twitter
       if (!stdout) {
         const altPath = path.join(home, '.local', 'bin', 'twitter');
-        let { stdout: out3 } = await runCli(altPath, args, envs);
+        let { stdout: out3, error: err3, stderr: std3 } = await runCli(altPath, args, envs);
         stdout = out3;
+        if (err3) {
+          console.log(`[Twitter CLI debug] Fallback 2 altpath check failed: ${err3.message}. Stderr: ${std3}`);
+        }
       }
 
-      if (!stdout) continue;
+      if (!stdout) {
+        console.log(`[Twitter CLI debug] Finished search for keyword "${keyword}" with NO stdout output.`);
+        continue;
+      }
       let parsed = JSON.parse(stdout);
       let tweets = Array.isArray(parsed) ? parsed : (parsed?.data || []);
 
