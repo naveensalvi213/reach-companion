@@ -828,7 +828,7 @@ const runBackgroundSearch = async () => {
         }
         return results;
       })(),
-      scrapeTwitterCli(cfg.keywords, hoursNum, activeTwitter?.value, activeTwitter?.ct0, cfg.excludes)
+      scrapeTwitterCli([cfg.keywords.map(k => `"${k}"`).join(' OR ')], hoursNum, activeTwitter?.value, activeTwitter?.ct0, cfg.excludes)
     ]);
 
     let allResults = [...twitterResults, ...redditResults];
@@ -1365,7 +1365,8 @@ app.post('/api/manual-search', async (req, res) => {
       }
     }
     if (!platform || platform === 'all' || platform === 'twitter') {
-      twitterResults = await scrapeTwitterCli(rawKeywords, hoursNum, activeTwitter?.value, activeTwitter?.ct0, excludeList);
+      const combinedQuery = rawKeywords.map(k => `"${k}"`).join(' OR ');
+      twitterResults = await scrapeTwitterCli([combinedQuery], hoursNum, activeTwitter?.value, activeTwitter?.ct0, excludeList);
     }
 
     let allResults = [...twitterResults, ...redditResults];
