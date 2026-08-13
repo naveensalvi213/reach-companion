@@ -44,5 +44,5 @@ templates.json
 
 # Exclude cloud-backend data and python cache packages
 cloud-backend/data/
-cloud-backend/python_packages/
+# cloud-backend/python_packages/ (Keep to track custom scraper engines)
 cloud-backend/.cache/
