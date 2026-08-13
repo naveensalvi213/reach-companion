@@ -1,0 +1,13 @@
+{
+  "name": "reach-desktop",
+  "version": "1.0.0",
+  "description": "Reach Desktop Companion App",
+  "main": "electron-main.js",
+  "scripts": {
+    "desktop": "node run-desktop.js"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-packager": "^17.1.2"
+  }
+}

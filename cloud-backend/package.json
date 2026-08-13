@@ -1,0 +1,14 @@
+{
+  "name": "reach-companion-cloud",
+  "version": "2.0.0",
+  "description": "24/7 Automated Outreach Engine for X and Reddit",
+  "main": "index.js",
+  "scripts": {
+    "build": "python3 -m ensurepip --default-pip || true && python3 -m pip install --target ./python_packages --upgrade curl-cffi soupsieve",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  }
+}
