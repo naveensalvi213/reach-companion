@@ -378,6 +378,19 @@
       </div>
       <div class="tag-container" id="specialKeywordsTagContainer"></div>
     </div>
+
+    <div class="card">
+      <div class="card-title">Engine Scan & Delay Settings</div>
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label style="font-size: 0.78rem; display: block; margin-bottom: 0.25rem; font-weight: 500;">Scan Polling Interval (Minutes)</label>
+        <input type="number" id="intervalMinutesInput" min="1" placeholder="e.g. 5" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: var(--text);" />
+      </div>
+      <div class="form-group" style="margin-bottom: 0.75rem;">
+        <label style="font-size: 0.78rem; display: block; margin-bottom: 0.25rem; font-weight: 500;">Comment Delay (Minutes) — Anti-Spam</label>
+        <input type="number" id="commentDelayInput" min="0" placeholder="e.g. 2" style="width: 100%; padding: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 6px; color: var(--text);" />
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="saveEngineSettings()">Save Engine Settings</button>
+    </div>
   </div>
 
   <!-- TAB 4: DM TEMPLATES -->
@@ -477,6 +490,13 @@
         document.getElementById('toggleAutoBtn').innerText = currentAutoState ? 'Pause Auto-Outreach' : 'Enable Auto-Outreach';
         document.getElementById('toggleAutoBtn').className = currentAutoState ? 'btn btn-red' : 'btn btn-green';
         if (configData.xActionConfig) document.getElementById('xActionSelect').value = configData.xActionConfig;
+        
+        if (configData.intervalMinutes) {
+          document.getElementById('intervalMinutesInput').value = configData.intervalMinutes;
+        }
+        if (configData.commentDelay !== undefined) {
+          document.getElementById('commentDelayInput').value = configData.commentDelay;
+        }
 
         // Stats
         document.getElementById('totalLeads').innerText = inbRes.posts ? inbRes.posts.length : 0;
@@ -565,6 +585,17 @@
     async function saveXActionConfig() {
       const mode = document.getElementById('xActionSelect').value;
       await saveConfigApi({ xActionConfig: mode });
+    }
+
+    async function saveEngineSettings() {
+      const interval = parseInt(document.getElementById('intervalMinutesInput').value) || 5;
+      const delay = parseInt(document.getElementById('commentDelayInput').value) || 0;
+      await saveConfigApi({ 
+        intervalMinutes: interval,
+        commentDelay: delay 
+      });
+      alert('⚡ Engine Settings saved successfully!');
+      loadData();
     }
 
     async function saveConfigApi(patch) {
