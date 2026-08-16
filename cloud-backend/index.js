@@ -820,14 +820,7 @@ const runBackgroundSearch = async () => {
   try {
     const hoursNum = 24;
     const [redditResults, twitterResults] = await Promise.all([
-      (async () => {
-        const results = [];
-        for (const kw of cfg.keywords) {
-          const kwRes = await scrapeRedditNative(kw);
-          results.push(...kwRes);
-        }
-        return results;
-      })(),
+      scrapeRedditCli(cfg.keywords, hoursNum, activeReddit?.value),
       scrapeTwitterCli([cfg.keywords.map(k => `"${k}"`).join(' OR ')], hoursNum, activeTwitter?.value, activeTwitter?.ct0, cfg.excludes)
     ]);
 
@@ -1359,10 +1352,7 @@ app.post('/api/manual-search', async (req, res) => {
     let twitterResults = [];
 
     if (!platform || platform === 'all' || platform === 'reddit') {
-      for (const kw of rawKeywords) {
-        const kwRes = await scrapeRedditNative(kw);
-        redditResults.push(...kwRes);
-      }
+      redditResults = await scrapeRedditCli(rawKeywords, hoursNum, activeReddit?.value);
     }
     if (!platform || platform === 'all' || platform === 'twitter') {
       const combinedQuery = rawKeywords.map(k => `"${k}"`).join(' OR ');
