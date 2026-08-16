@@ -83,6 +83,91 @@ const saveActiveProfile = (profile) => {
 
 let activeProfile = getActiveProfile();
 
+const crypto = require('crypto');
+const https = require('https');
+
+// Generate unique bucket ID based on Telegram token
+const getKvdbBucketId = () => {
+  const token = process.env.REACH_TELEGRAM_TOKEN || '8911468384:AAGT7-Jn5FCPUEUSghEBLT8Jth6_-i-80fw';
+  return crypto.createHash('md5').update(token).digest('hex');
+};
+
+const kvdbRequest = (key, method, data = null) => {
+  return new Promise((resolve) => {
+    const bucketId = getKvdbBucketId();
+    const url = `https://kvdb.io/${bucketId}/${key}`;
+    const parsedUrl = new URL(url);
+    const options = {
+      hostname: parsedUrl.hostname,
+      path: parsedUrl.pathname,
+      method: method,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+
+    const req = https.request(options, (res) => {
+      let body = '';
+      res.on('data', chunk => body += chunk);
+      res.on('end', () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(body);
+        } else {
+          resolve(null);
+        }
+      });
+    });
+
+    req.on('error', (e) => {
+      console.error(`[KVDB Error] Request failed for ${key}:`, e.message);
+      resolve(null);
+    });
+    
+    if (data && (method === 'POST' || method === 'PUT')) {
+      req.write(typeof data === 'string' ? data : JSON.stringify(data));
+    }
+    req.end();
+  });
+};
+
+const syncFromKvdb = async () => {
+  console.log('[Cloud Sync] Fetching persistent settings from KVDB cloud store...');
+  const defaultDir = path.join(PROFILES_DIR, 'default');
+  if (!fs.existsSync(defaultDir)) {
+    fs.mkdirSync(defaultDir, { recursive: true });
+  }
+
+  // 1. Sync Config
+  const cloudConfig = await kvdbRequest('config', 'GET');
+  if (cloudConfig) {
+    try {
+      JSON.parse(cloudConfig); // validate JSON
+      fs.writeFileSync(path.join(defaultDir, 'config.json'), cloudConfig);
+      console.log('[Cloud Sync] Config synced from KVDB successfully.');
+    } catch (e) {}
+  }
+
+  // 2. Sync Tokens
+  const cloudTokens = await kvdbRequest('tokens', 'GET');
+  if (cloudTokens) {
+    try {
+      JSON.parse(cloudTokens);
+      fs.writeFileSync(path.join(defaultDir, 'tokens.json'), cloudTokens);
+      console.log('[Cloud Sync] Tokens synced from KVDB successfully.');
+    } catch (e) {}
+  }
+
+  // 3. Sync Templates
+  const cloudTemplates = await kvdbRequest('templates', 'GET');
+  if (cloudTemplates) {
+    try {
+      JSON.parse(cloudTemplates);
+      fs.writeFileSync(path.join(defaultDir, 'templates.json'), cloudTemplates);
+      console.log('[Cloud Sync] Templates synced from KVDB successfully.');
+    } catch (e) {}
+  }
+};
+
 const getProfilePath = (fileName) => {
   const profileDir = path.join(PROFILES_DIR, activeProfile);
   if (!fs.existsSync(profileDir)) {
@@ -98,11 +183,14 @@ const getConfigFile = () => getProfilePath('config.json');
 const getSentLogsFile = () => getProfilePath('sent_logs.json');
 
 // Restore initial default profile files if missing
-const migrateExistingToDefault = () => {
+const migrateExistingToDefault = async () => {
   const defaultDir = path.join(PROFILES_DIR, 'default');
   if (!fs.existsSync(defaultDir)) {
     fs.mkdirSync(defaultDir, { recursive: true });
   }
+  
+  // Sync from KVDB first to restore files
+  await syncFromKvdb();
 
   // Restore from environment variables if defined on Render
   if (process.env.REACH_TOKENS) {
@@ -209,6 +297,7 @@ const getTokensData = () => {
 
 const saveTokensData = (data) => {
   fs.writeFileSync(getTokensFile(), JSON.stringify(data, null, 2));
+  kvdbRequest('tokens', 'POST', data);
 };
 
 const getTemplatesData = () => {
@@ -223,6 +312,7 @@ const getTemplatesData = () => {
 
 const saveTemplatesData = (data) => {
   fs.writeFileSync(getTemplatesFile(), JSON.stringify(data, null, 2));
+  kvdbRequest('templates', 'POST', data);
 };
 
 const getDiscoveredPosts = () => {
@@ -375,6 +465,7 @@ const getConfig = () => {
 
 const saveConfig = (cfg) => {
   fs.writeFileSync(getConfigFile(), JSON.stringify(cfg, null, 2));
+  kvdbRequest('config', 'POST', cfg);
 };
 
 // --- Scrapers ---
